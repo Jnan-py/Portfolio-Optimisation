@@ -1,0 +1,15 @@
+streamlit
+pandas
+yfinance
+dimod
+streamlit_option_menu
+scipy
+pypfopt
+prophet
+plotly
+numpy
+dwave-neal
+dwave-networkx
+dwave-tabu
+dwave-qbsolv
+dwave-system
