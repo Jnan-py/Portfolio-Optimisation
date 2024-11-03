@@ -224,7 +224,7 @@ def main():
         obj = obj1+obj2
         cqm.set_objective(obj)
 
-        sampler = LeapHybridCQMSampler(token="DEV-a239fc44badb23b675dd22ce03b03f7392171aa8")
+        sampler = LeapHybridCQMSampler(token="your-dwave-token")
         samples = sampler.sample_cqm(cqm,time_limit=10)
         sol_lst = []
         for i in samples:
@@ -274,7 +274,7 @@ def main():
         cqm1.set_objective(obj1)
         cqm1.add_constraint(obj2 , '==' , rhs = global_min_vol)
 
-        sampler = LeapHybridCQMSampler(token="DEV-a239fc44badb23b675dd22ce03b03f7392171aa8")
+        sampler = LeapHybridCQMSampler(token="your-dwave-token")
         samp = sampler.sample_cqm(cqm1)
         solll = []
         for i in samp:
@@ -330,7 +330,7 @@ def main():
         cqm2.set_objective(obj2)
         cqm2.add_constraint(-obj1 , '==' , rhs = global_max_return)
 
-        sampler = LeapHybridCQMSampler(token="DEV-a239fc44badb23b675dd22ce03b03f7392171aa8")
+        sampler = LeapHybridCQMSampler(token="your-dwave-token")
         samp = sampler.sample_cqm(cqm2)
         soll = []
         for i in samp:
