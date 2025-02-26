@@ -2,14 +2,10 @@ streamlit
 pandas
 yfinance
 dimod
-streamlit_option_menu
+streamlit-option-menu
 scipy
 pypfopt
+numpy
 prophet
 plotly
-numpy
-dwave-neal
-dwave-networkx
-dwave-tabu
-dwave-qbsolv
 dwave-system
