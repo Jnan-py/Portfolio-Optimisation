@@ -16,12 +16,13 @@ import plotly.express as px
 from dwave.samplers import *
 from dwave.system import *
 
+st.set_page_config(page_icon = ":price", page_title = "Portfolio Optimisation", layout = "wide")
 
 def main():
-    st.title('PortFoliO Optimisation')
+    st.title('SmartFolio')
 
     with st.sidebar:
-        st.title("Portfolio Optimisation")
+        st.title("SmartFolio Optimisation")
         with st.expander("Select your ML backend",expanded=True):
             page = st.selectbox(
             label="Types",
@@ -36,7 +37,7 @@ def main():
     def get_metrics(tkr,close_df):
         for i in tkr:
             data = yf.download(i,start,end)
-            close_df[i] = data['Adj Close']
+            close_df[i] = data['Close']
             
         close_df = close_df.fillna(method="ffill")
         mu = expected_returns.mean_historical_return(close_df)
@@ -44,41 +45,51 @@ def main():
         ef = EfficientFrontier(mu,s)
         return mu,s,ef
 
-    def get_details():
+    def get_details(start, end):
         with st.expander("**Details of Stock**",expanded=False):
             tr = st.selectbox("Choose the Stock Ticker",tkr)
             if tr:
                 st.session_state.ticker=True
                 if st.session_state.ticker:
                     resp = yf.Ticker(tr)
-                    info = resp.info
-                    name = info.get('longName')
-                    country = info.get('country')
-                    ceo = info.get('companyOfficers')[0]['name']
-                    currency = info.get('currency')
-                    summ = info.get('longBusinessSummary')
-                    ind = info.get('industry')
-                    website = info.get('website')
-                    rev = info.get('totalRevenue')
+                    try:
+                        info = resp.info
+                        name = info.get('longName')
+                        country = info.get('country')
+                        ceo = info.get('companyOfficers')[0]['name']
+                        currency = info.get('currency')
+                        summ = info.get('longBusinessSummary')
+                        ind = info.get('industry')
+                        website = info.get('website')
+                        rev = info.get('totalRevenue')
 
-                    st.subheader(name)
-                    st.write(f'**Industry** : {ind}')
-                    st.write(F'**Chief Executive Officer**: {ceo}')
-                    st.write(f'**Country** : {country}')
-                    st.write(f'**Currency** : {currency}')
-                    st.write(f'**Total Revenue** : {rev}')
-                    st.write(f'**Summary** : {summ}')
+                        st.subheader(name)
+                        st.write(f'**Industry** : {ind}')
+                        st.write(F'**Chief Executive Officer**: {ceo}')
+                        st.write(f'**Country** : {country}')
+                        st.write(f'**Currency** : {currency}')
+                        st.write(f'**Total Revenue** : {rev}')
+                        st.write(f'**Summary** : {summ}')
+
+                    except Exception as e:
+                        st.warning(f"The information regarding {tr} is not available - {e}")
 
                     
                     if st.button("View Price Table and Graph"):
                         st.subheader("Price Table")
                         stock = yf.download(tr,start,end)
                         stock.reset_index(inplace=True)
-                        st.write(stock)
                         
+                        cl_open = pd.DataFrame()
+                        cl_open['Open'] = stock['Open']
+                        cl_open['Close'] = stock["Close"]
+                        cl_open = cl_open.fillna(method = "ffill")
+
+                        st.write(stock)
+
                         fig=go.Figure()
-                        fig.add_trace(go.Scatter(x=stock['Date'],y=stock['Open'],name="Stock Open Price"))
-                        fig.add_trace(go.Scatter(x=stock['Date'],y=stock['Close'],name="Stock Close Price "))
+                        fig.add_trace(go.Scatter(x=stock['Date'],y=cl_open['Open'],name="Stock Open Price"))
+                        fig.add_trace(go.Scatter(x=stock['Date'],y=cl_open['Close'],name="Stock Close Price "))
                         fig.layout.update(title_text="Stock Data Graph",xaxis_rangeslider_visible=True)
                         fig.update_layout(xaxis_title="Price",yaxis_title="Date")        
                         st.plotly_chart(fig)
@@ -199,6 +210,7 @@ def main():
                 )
 
             st.subheader("Graphs")
+
             fig1 = go.Figure()
             for i in tkr:
                 fig1.add_trace(go.Scatter(x=close_df.index,y=close_df[i],name=i))
@@ -224,7 +236,7 @@ def main():
         obj = obj1+obj2
         cqm.set_objective(obj)
 
-        sampler = LeapHybridCQMSampler(token="your-dwave-token")
+        sampler = LeapHybridCQMSampler(token="DEV-25891fcabc0ffd7ddd7f0d64880c7b51237953a2")
         samples = sampler.sample_cqm(cqm,time_limit=10)
         sol_lst = []
         for i in samples:
@@ -274,7 +286,7 @@ def main():
         cqm1.set_objective(obj1)
         cqm1.add_constraint(obj2 , '==' , rhs = global_min_vol)
 
-        sampler = LeapHybridCQMSampler(token="your-dwave-token")
+        sampler = LeapHybridCQMSampler(token="DEV-25891fcabc0ffd7ddd7f0d64880c7b51237953a2")
         samp = sampler.sample_cqm(cqm1)
         solll = []
         for i in samp:
@@ -330,7 +342,7 @@ def main():
         cqm2.set_objective(obj2)
         cqm2.add_constraint(-obj1 , '==' , rhs = global_max_return)
 
-        sampler = LeapHybridCQMSampler(token="your-dwave-token")
+        sampler = LeapHybridCQMSampler(token="DEV-25891fcabc0ffd7ddd7f0d64880c7b51237953a2")
         samp = sampler.sample_cqm(cqm2)
         soll = []
         for i in samp:
@@ -400,7 +412,7 @@ def main():
             if tkr and budget and rrate and len(tkr)==n: 
                 end = datetime.datetime.today()
                 start = end - datetime.timedelta(days=(3650))
-                get_details()
+                get_details(start, end)
                 mu,s,ef = get_metrics(tkr,close_df)
                 
                 if st.button("Get Optimisation Results"):
@@ -413,7 +425,7 @@ def main():
             if tkr and budget and rrate and len(tkr)==n: 
                 end = datetime.datetime.today()
                 start = end - datetime.timedelta(days=(3650))
-                get_details()
+                get_details(start, end)
                 mu,s,ef = get_metrics(tkr,close_df)
 
                 if st.button("Get Optimisation Results"):
@@ -428,7 +440,7 @@ def main():
             if tkr and budget and rrate and len(tkr)==n: 
                 end = datetime.datetime.today()
                 start = end - datetime.timedelta(days=(3650))
-                get_details()
+                get_details(start, end)
                 mu,s,ef = get_metrics(tkr,close_df)
 
                 if st.button("Get Optimisation Results"):
@@ -448,7 +460,7 @@ def main():
                     st.warning(f"The given target volatility should be greater than the minimum volatility {global_min_vol}")
 
                 elif target_vol > global_min_vol:    
-                    get_details()
+                    get_details(start, end)
                     if st.button("Get Optimisation Results"):
                         st.header("Target Volatility")
                         main_wghts,av_keys,weights = targ_vol(ef,budget,target_vol)
@@ -468,7 +480,7 @@ def main():
                     st.warning(f"The given target return should be lesser than the maximum returns {global_max_return}")
 
                 elif target_ret < global_max_return:    
-                    get_details()
+                    get_details(start, end)
                     if st.button("Get Optimisation Results"):
                         st.header("Target Returns")
                         mu,s,ef = get_metrics(tkr,close_df)
@@ -476,8 +488,8 @@ def main():
                         further_details(main_wghts=main_wghts,av_keys=av_keys,weights=weights,mu=mu,s=s,rrate=rrate,close_df=close_df,tkr=tkr)
 
     elif page == "Quantum Machine Learning":
-        st.header("Portfolio Optimisation using Quantum Machine Learning")
-        n = st.number_input("Enter the number of tickers : ",min_value=0,step=1)
+        st.header("Quantum Machine Learning")
+        n = st.number_input("Enter the number of tickers : ",min_value=0,step=1,max_value=500)
         strategy = st.selectbox("Select Strategy", options=[
             "Maximize Sharpe", 
             "Maximize Returns", 
@@ -494,7 +506,7 @@ def main():
             if tkr and budget and rrate and len(tkr)==n: 
                 end = datetime.datetime.today()
                 start = end - datetime.timedelta(days=(3650))
-                get_details()
+                get_details(start, end)
                 mu,s,ef = get_metrics(tkr,close_df)
 
                 sigma = np.zeros((n,n))
@@ -512,7 +524,7 @@ def main():
             if tkr and budget and rrate and len(tkr)==n: 
                 end = datetime.datetime.today()
                 start = end - datetime.timedelta(days=(3650))
-                get_details()
+                get_details(start, end)
                 mu,s,ef = get_metrics(tkr,close_df)
                 global_min_vol = np.sqrt(1 / np.sum(np.linalg.pinv(s)))
 
@@ -531,7 +543,7 @@ def main():
             if tkr and budget and rrate and len(tkr)==n: 
                 end = datetime.datetime.today()
                 start = end - datetime.timedelta(days=(3650))
-                get_details()
+                get_details(start, end)
                 mu,s,ef = get_metrics(tkr,close_df)
                 m_wghts,av,wghts,fin_df = max_returns(ef,budget)
                 global_max_return = round(exp_r(m_wghts,mu),5)
